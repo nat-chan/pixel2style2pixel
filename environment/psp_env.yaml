@@ -28,6 +28,7 @@ dependencies:
   - pudb
   - debugpy
   - lmdb # ros
+  - wandb
   - pip:
     - scipy==1.4.1
     - matplotlib==3.2.1
