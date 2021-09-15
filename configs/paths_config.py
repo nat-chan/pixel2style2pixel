@@ -6,6 +6,8 @@ dataset_paths = {
 	'celeba_train_segmentation': '',
 	'celeba_test_segmentation': '',
 	'ffhq': '',
+	"whitechest_train": "/data/natsuki/whitechest_train",
+	"whitechest_val": "/data/natsuki/whitechest_val",
 }
 
 model_paths = {

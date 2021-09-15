@@ -10,6 +10,20 @@ DATASETS = {
 		'test_source_root': dataset_paths['celeba_test'],
 		'test_target_root': dataset_paths['celeba_test'],
 	},
+	'debug': {
+		'transforms': transforms_config.EncodeTransforms,
+		'train_source_root': dataset_paths['whitechest_val'],
+		'train_target_root': dataset_paths['whitechest_val'],
+		'test_source_root': dataset_paths['whitechest_val'],
+		'test_target_root': dataset_paths['whitechest_val'],
+	},
+	'whitechest': {
+		'transforms': transforms_config.EncodeTransforms,
+		'train_source_root': dataset_paths['whitechest_train'],
+		'train_target_root': dataset_paths['whitechest_train'],
+		'test_source_root': dataset_paths['whitechest_val'],
+		'test_target_root': dataset_paths['whitechest_val'],
+	},
 	'ffhq_frontalize': {
 		'transforms': transforms_config.FrontalizationTransforms,
 		'train_source_root': dataset_paths['ffhq'],

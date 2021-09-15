@@ -446,7 +446,7 @@ class Generator(nn.Module):
         self.n_latent = self.log_size * 2 - 2
 
     def make_noise(self):
-        device = self.input.input.device
+        device = next(self.parameters()).device
 
         noises = [torch.randn(1, 1, 2 ** 2, 2 ** 2, device=device)]
 
@@ -458,7 +458,7 @@ class Generator(nn.Module):
 
     def mean_latent(self, n_latent):
         latent_in = torch.randn(
-            n_latent, self.style_dim, device=self.input.input.device
+            n_latent, self.style_dim, device=next(self.parameters()).device
         )
         latent = self.style(latent_in).mean(0, keepdim=True)
 
@@ -469,7 +469,7 @@ class Generator(nn.Module):
 
     def forward(
             self,
-            styles,
+            styles, # [f32(batchsize, 16, 512)]
             return_latents=False,
             return_features=False,
             inject_index=None,
@@ -479,10 +479,10 @@ class Generator(nn.Module):
             noise=None,
             randomize_noise=True,
     ):
-        if not input_is_latent:
+        if not input_is_latent: # False
             styles = [self.style(s) for s in styles]
 
-        if noise is None:
+        if noise is None: # True
             if randomize_noise:
                 noise = [None] * self.num_layers
             else:
@@ -490,7 +490,7 @@ class Generator(nn.Module):
                     getattr(self.noises, f'noise_{i}') for i in range(self.num_layers)
                 ]
 
-        if truncation < 1:
+        if truncation < 1: # False
             style_t = []
 
             for style in styles:
@@ -500,10 +500,10 @@ class Generator(nn.Module):
 
             styles = style_t
 
-        if len(styles) < 2:
+        if len(styles) < 2: # True
             inject_index = self.n_latent
 
-            if styles[0].ndim < 3:
+            if styles[0].ndim < 3: # False
                 latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
             else:
                 latent = styles[0]
@@ -518,6 +518,8 @@ class Generator(nn.Module):
             latent = torch.cat([latent, latent2], 1)
 
         out = self.input(latent)
+        # latent: f32(batchsize, 16, 512), (-0.8830, 5.1358)
+        # noise == [None]*15
         out = self.conv1(out, latent[:, 0], noise=noise[0])
 
         skip = self.to_rgb1(out, latent[:, 1])
@@ -532,14 +534,89 @@ class Generator(nn.Module):
 
             i += 2
 
-        image = skip
+        image = skip # f32(batchsize, 3, 512, 512) (-1.7183, 2.3069)
 
-        if return_latents:
+        if return_latents: # True
             return image, latent
         elif return_features:
             return image, out
         else:
             return image, None
+
+class Ada(Generator):
+    def __init__(
+        self,
+        size,
+        style_dim,
+        n_mlp,
+        pkl_path):
+        self.size = size # 解像度 512/1024
+        self.style_dim = style_dim # 固定 512
+        self.n_mlp = n_mlp # mappingの深さ
+        self.log_size = int(math.log(size, 2))
+        self.num_layers = (self.log_size - 2) * 2 + 1
+        self.n_latent = self.log_size * 2 - 2
+        nn.Module.__init__(self)
+        import pickle
+        import sys
+        sys.path.append('/home/natsuki/stylegan2-ada-pytorch')
+        with open(pkl_path, 'rb') as f:
+            self.G = pickle.load(f)['G_ema']
+        self.style = lambda z: self.G.mapping(z, None)
+
+    def forward(
+            self,
+            styles, # [f32(batchsize, 16, 512)]
+            return_latents=False,
+            return_features=False,
+            inject_index=None,
+            truncation=1,
+            truncation_latent=None,
+            input_is_latent=False,
+            noise=None,
+            randomize_noise=True,
+    ):
+        if not input_is_latent: # False
+            styles = [self.style(s) for s in styles]
+
+        assert noise is None
+
+        if truncation < 1: # False
+            style_t = []
+
+            for style in styles:
+                style_t.append(
+                    truncation_latent + truncation * (style - truncation_latent)
+                )
+
+            styles = style_t
+
+        if len(styles) < 2: # True
+            inject_index = self.n_latent
+
+            if styles[0].ndim < 3: # False
+                latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
+            else:
+                latent = styles[0]
+
+        else:
+            if inject_index is None:
+                inject_index = random.randint(1, self.n_latent - 1)
+
+            latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
+            latent2 = styles[1].unsqueeze(1).repeat(1, self.n_latent - inject_index, 1)
+
+            latent = torch.cat([latent, latent2], 1)
+
+        image = self.G.synthesis(latent, noise_mode='const')# f32(batchsize, 3, 512, 512) (-1.7183, 2.3069)
+
+        assert not return_features
+        if return_latents: # True
+            return image, latent
+        else:
+            return image, None
+
+
 
 
 class ConvLayer(nn.Sequential):

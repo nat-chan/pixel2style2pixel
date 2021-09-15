@@ -8,8 +8,9 @@ import math
 import torch
 from torch import nn
 from models.encoders import psp_encoders
-from models.stylegan2.model import Generator
+from models.stylegan2.model import Generator, Ada
 from configs.paths_config import model_paths
+import numpy as np
 
 
 def get_keys(d, name):
@@ -21,6 +22,9 @@ def get_keys(d, name):
 
 class pSp(nn.Module):
 
+	def use_ada(self):
+		return self.opts.stylegan_weights.split(".")[-1] == "pkl"
+
 	def __init__(self, opts):
 		super(pSp, self).__init__()
 		self.set_opts(opts)
@@ -28,7 +32,12 @@ class pSp(nn.Module):
 		self.opts.n_styles = int(math.log(self.opts.output_size, 2)) * 2 - 2
 		# Define architecture
 		self.encoder = self.set_encoder()
-		self.decoder = Generator(self.opts.output_size, 512, 8)
+		if self.use_ada():
+			print(f"\x1b[31;1mLoad: {self.opts.stylegan_weights}\x1b[m")
+			self.decoder = Ada(self.opts.output_size, 512, 2, self.opts.stylegan_weights)
+			self.latent_avg = torch.Tensor(np.load("/data/natsuki/danbooru2020/whitechest_avg.npy").squeeze()).to(self.opts.device)
+		else:
+			self.decoder = Generator(self.opts.output_size, 512, 8)
 		self.face_pool = torch.nn.AdaptiveAvgPool2d((256, 256))
 		# Load weights if needed
 		self.load_weights()
@@ -49,8 +58,9 @@ class pSp(nn.Module):
 			print('Loading pSp from checkpoint: {}'.format(self.opts.checkpoint_path))
 			ckpt = torch.load(self.opts.checkpoint_path, map_location='cpu')
 			self.encoder.load_state_dict(get_keys(ckpt, 'encoder'), strict=True)
-			self.decoder.load_state_dict(get_keys(ckpt, 'decoder'), strict=True)
-			self.__load_latent_avg(ckpt)
+			if not self.use_ada():
+				self.decoder.load_state_dict(get_keys(ckpt, 'decoder'), strict=True)
+				self.__load_latent_avg(ckpt)
 		else:
 			print('Loading encoders weights from irse50!')
 			encoder_ckpt = torch.load(model_paths['ir_se50'])
@@ -58,13 +68,14 @@ class pSp(nn.Module):
 			if self.opts.label_nc != 0:
 				encoder_ckpt = {k: v for k, v in encoder_ckpt.items() if "input_layer" not in k}
 			self.encoder.load_state_dict(encoder_ckpt, strict=False)
-			print('Loading decoder weights from pretrained!')
-			ckpt = torch.load(self.opts.stylegan_weights)
-			self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
-			if self.opts.learn_in_w:
-				self.__load_latent_avg(ckpt, repeat=1)
-			else:
-				self.__load_latent_avg(ckpt, repeat=self.opts.n_styles)
+			if not self.use_ada():
+				print('Loading decoder weights from pretrained!')
+				ckpt = torch.load(self.opts.stylegan_weights)
+				self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
+				if self.opts.learn_in_w:
+					self.__load_latent_avg(ckpt, repeat=1)
+				else:
+					self.__load_latent_avg(ckpt, repeat=self.opts.n_styles)
 
 	def forward(self, x, resize=True, latent_mask=None, input_code=False, randomize_noise=True,
 	            inject_latent=None, return_latents=False, alpha=None):
