@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export CUDA_VISIBLE_DEVICES=2
-
 # Training the pSp Encoder
 mode=encavg
 
@@ -17,6 +15,7 @@ $1 scripts/train.py \
     --lpips_lambda=0.8 \
     --l2_lambda=1 \
     --id_lambda=0 \
+    --moco_lambda=0.5 \
     --output_size=512 \
     --start_from_latent_avg \
     --stylegan_weights=/data/natsuki/training116/00023-white_yc05_yw04-mirror-auto4-gamma10-noaug/network-snapshot-021800.pkl \
