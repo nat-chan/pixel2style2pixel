@@ -51,7 +51,7 @@ class Coach:
 		if self.opts.w_norm_lambda > 0:
 			self.w_norm_loss = w_norm.WNormLoss(start_from_latent_avg=self.opts.start_from_latent_avg)
 		if self.opts.moco_lambda > 0:
-			self.moco_loss = moco_loss.MocoLoss().to(self.device).eval()
+			self.moco_loss = moco_loss.MocoLoss(self.opts).to(self.device).eval()
 
 		# Initialize optimizer
 		self.optimizer = self.configure_optimizers()

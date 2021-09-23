@@ -6,10 +6,11 @@ from configs.paths_config import model_paths
 
 class MocoLoss(nn.Module):
 
-    def __init__(self):
+    def __init__(self, opts):
         super(MocoLoss, self).__init__()
         print("Loading MOCO model from path: {}".format(model_paths["moco"]))
         self.model = self.__load_model()
+        self.opts = opts
         self.model.cuda()
         self.model.eval()
 
@@ -46,7 +47,8 @@ class MocoLoss(nn.Module):
 
     def forward(self, y_hat, y, x):
         n_samples = x.shape[0]
-        x_feats = self.extract_feats(x)
+        if not self.opts.noxfeat:
+            x_feats = self.extract_feats(x)
         y_feats = self.extract_feats(y)
         y_hat_feats = self.extract_feats(y_hat)
         y_feats = y_feats.detach()
@@ -56,14 +58,18 @@ class MocoLoss(nn.Module):
         count = 0
         for i in range(n_samples):
             diff_target = y_hat_feats[i].dot(y_feats[i])
-            diff_input = y_hat_feats[i].dot(x_feats[i])
-            diff_views = y_feats[i].dot(x_feats[i])
-            sim_logs.append({'diff_target': float(diff_target),
-                             'diff_input': float(diff_input),
-                             'diff_views': float(diff_views)})
+            if not self.opts.noxfeat:
+                diff_input = y_hat_feats[i].dot(x_feats[i])
+                diff_views = y_feats[i].dot(x_feats[i])
+                sim_logs.append({'diff_target': float(diff_target),
+                                'diff_input': float(diff_input),
+                                'diff_views': float(diff_views)})
+            else:
+                sim_logs.append({'diff_target': float(diff_target)})
             loss += 1 - diff_target
-            sim_diff = float(diff_target) - float(diff_views)
-            sim_improvement += sim_diff
+            if not self.opts.noxfeat:
+                sim_diff = float(diff_target) - float(diff_views)
+                sim_improvement += sim_diff
             count += 1
 
         return loss / count, sim_improvement / count, sim_logs

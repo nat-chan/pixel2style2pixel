@@ -50,6 +50,8 @@ class TrainOptions:
 		# arguments for super-resolution
 		self.parser.add_argument('--resize_factors', type=str, default=None, help='For super-res, comma-separated resize factors to use for inference.')
 
+		self.parser.add_argument('--noxfeat', action="store_true", help='disable xfeat from id/moco loss')
+
 	def parse(self):
 		opts = self.parser.parse_args()
 		return opts

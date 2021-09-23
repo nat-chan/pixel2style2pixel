@@ -24,6 +24,13 @@ DATASETS = {
 		'test_source_root': dataset_paths['whitechest_val'],
 		'test_target_root': dataset_paths['whitechest_val'],
 	},
+	'whitechest_sim': {
+		'transforms': transforms_config.SketchToImageTransforms,
+		'train_source_root': "/data/natsuki/whitechest_sim_train",
+		'train_target_root': "/data/natsuki/whitechest_train",
+		'test_source_root': "/data/natsuki/whitechest_sim_val",
+		'test_target_root': "/data/natsuki/whitechest_val",
+	},
 	'ffhq_frontalize': {
 		'transforms': transforms_config.FrontalizationTransforms,
 		'train_source_root': dataset_paths['ffhq'],
