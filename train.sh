@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Training the pSp Encoder
-mode=encavgsim
+mode=encavgsimnomoco
 
 $1 scripts/train.py \
     --exp_dir=/data/natsuki/danbooru2020/psp/${mode}_$(date +%s) \
@@ -22,9 +22,9 @@ $1 scripts/train.py \
     --w_norm_lambda=0.005 \
     --label_nc=1 \
     --input_nc=1 \
-    --use_wandb \
-    --moco_lambda=0.5 \
-    --noxfeat
+    --use_wandb
+#    --moco_lambda=0.5 \
+#    --noxfeat
 #    --dataset_type=debug
 #    --stylegan_weights=/data/natsuki/danbooru2020/a.pt
 #    --start_from_latent_avg \
