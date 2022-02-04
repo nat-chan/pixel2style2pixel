@@ -16,6 +16,7 @@ dependencies:
   - openssl=1.1.1g=h516909a_0
   - pip=20.0.2=py36_3
   - python=3.6.7=h0371630_0
+#  - python=3.7 # コンフリクト起こす
   - python_abi=3.6=1_cp36m
   - readline=7.0=h7b6447c_5
   - setuptools=46.4.0=py36_0
@@ -29,6 +30,9 @@ dependencies:
   - debugpy
   - lmdb # ros
   - wandb
+  - ipywidgets
+  - ipycanvas
+  - ipyfilechooser
   - pip:
     - scipy==1.4.1
     - matplotlib==3.2.1
@@ -37,6 +41,8 @@ dependencies:
     - opencv-python==4.2.0.34
     - pillow==7.1.2
     - tensorboard==2.2.1
+    - nokogiri
+#    - gradio # 使うにはpython3.7にあげる
 prefix: ~/anaconda3/envs/psp_env
 
 # after 
