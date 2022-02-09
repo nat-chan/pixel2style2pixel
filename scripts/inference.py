@@ -109,7 +109,7 @@ def run():
         f.write(result_str)
 
 
-def run_on_batch(inputs, net, opts):
+def run_on_batch(inputs, net, opts, latent_to_inject=None):
     if opts.latent_mask is None:
         result_batch = net(inputs, randomize_noise=False, resize=opts.resize_outputs)
     else:
@@ -117,10 +117,12 @@ def run_on_batch(inputs, net, opts):
         result_batch = []
         for image_idx, input_image in enumerate(inputs):
             # get latent vector to inject into our input image
-            vec_to_inject = np.random.randn(1, 512).astype('float32')
-            _, latent_to_inject = net(torch.from_numpy(vec_to_inject).to("cuda"),
-                                      input_code=True,
-                                      return_latents=True)
+            # torch.float32 torch.Size([1, 16, 512]) maxmin=(5.2292, -0.9100)
+            if latent_to_inject is None:
+                vec_to_inject = np.random.randn(1, 512).astype('float32')
+                _, latent_to_inject = net(torch.from_numpy(vec_to_inject).to("cuda"),
+                                        input_code=True,
+                                        return_latents=True)
             # get output image with injected style vector
             res = net(input_image.unsqueeze(0).to("cuda").float(),
                       latent_mask=latent_mask,
