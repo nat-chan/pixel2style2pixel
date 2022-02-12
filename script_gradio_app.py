@@ -11,10 +11,27 @@ from options.test_options import TestOptions
 from scripts.inference import run_on_batch
 import torch
 from models.psp import pSp
+import os
+import sys
+import torchvision.transforms as transforms
+try:
+    from script_imgtransform import imgtransform
+except:
+    imgtransform = lambda *x: x
+
+# sketch_simplification
+olddir = os.getcwd()
+newdir = "/home/natsuki/sketch_simplification"
+os.chdir(newdir)
+sys.path.insert(0, newdir)
+import simplify
+sm = simplify.StateModel("model_gan")
+sys.path = sys.path[1:]
+os.chdir(olddir)
+
 root = Path("/data/natsuki/danbooru2020/psp/encavgsim_1632393929")
 # encavg_1631706221 エンコード
 epoch = "iteration_495000.pt"
-#epoch = "best_model.pt"
 ckpt = torch.load(root/f"checkpoints/{epoch}", map_location='cpu')
 opts = ckpt['opts']
 test_opts = TestOptions().parser.parse_args(
@@ -26,8 +43,6 @@ f"""
 --test_workers=1 \
 --latent_mask=10,11,12,13,14,15
 """.split())
-#  --latent_mask=14,15
-# 15 -> 14,15 で色がガラッと変わる
 opts.update(vars(test_opts))
 if 'learn_in_w' not in opts:
     opts['learn_in_w'] = False
@@ -38,27 +53,28 @@ net = pSp(opts)
 net.eval()
 net.cuda()
 
-# ## sketchpadの線幅の変え方
-# frontend/static/bundle.jsの
-# (e.lineWidth = XXX)
-# を初めから三つ書き換えると変わる
-# ただし、share=Trueすると無理
-# 例えば3番目のe.lineWidth: 描画後の太さを表す
-
 def mapping(G, seed=1, psi=1):
     label = torch.zeros([1, G.c_dim], device="cuda")
     z = torch.from_numpy(np.random.RandomState(seed).randn(1, G.z_dim)).cuda()
     w = G.mapping(z, label, truncation_psi=psi)
     return w
 
+resize = transforms.Resize((256, 256))
 
 def fn(content_image, style_image):
+    content_image, style_image = imgtransform(content_image, style_image)
     try:
         seed = int(pyzbar.decode(Image.fromarray(style_image))[0].data)
     except:
         print("# pyzbar.decode error")
         seed = 0
-    content_torch = torch.from_numpy(content_image[None,None,:,:]/255).cuda()
+    
+    content_torch = torch.from_numpy(
+        sm.normalize(content_image[None,None,:,:]/255)
+    ).cuda().float()
+    content_torch = sm.model(content_torch)
+    content_torch = resize(content_torch)
+
     if seed == 0:
         latent_to_inject = None
     else:
@@ -69,7 +85,7 @@ def fn(content_image, style_image):
     return output_numpy
 
 
-content_image_input = gr.inputs.Image(label="スケッチの入力", shape=(256, 256), image_mode="L")
+content_image_input = gr.inputs.Image(label="スケッチの入力", shape=(512, 512), image_mode="L")
 style_image_input = gr.inputs.Image(label="塗り方の入力※左上のQRコードから読み取ります", shape=(512, 512))
 
 # Examples
