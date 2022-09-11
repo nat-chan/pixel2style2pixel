@@ -14,22 +14,19 @@ from models.psp import pSp
 import os
 import sys
 import torchvision.transforms as transforms
+from nokogiri.working_dir import working_dir
 try:
     from script_imgtransform import imgtransform
 except:
     imgtransform = lambda *x: x
 
 # sketch_simplification
-olddir = os.getcwd()
-newdir = "/home/natsuki/sketch_simplification"
-os.chdir(newdir)
-sys.path.insert(0, newdir)
-import simplify
-sm = simplify.StateModel("model_gan")
-sys.path = sys.path[1:]
-os.chdir(olddir)
+with working_dir("/home/natsuki/sketch_simplification"):
+    import simplify
+    sm = simplify.StateModel("model_gan")
 
-root = Path("/data/natsuki/danbooru2020/psp/encavgsim_1632393929")
+#root = Path("/data/natsuki/danbooru2020/psp/encavgsim_1632393929")
+root = Path("/home/natsuki/encavgsim_1632393929")
 # encavg_1631706221 エンコード
 epoch = "iteration_495000.pt"
 ckpt = torch.load(root/f"checkpoints/{epoch}", map_location='cpu')
@@ -100,7 +97,7 @@ fn=fn,
 inputs=[content_image_input, style_image_input],
 outputs="image",
 examples=examples,
-examples_per_page=5,
+examples_per_page=20,
 allow_flagging="never",
 allow_screenshot=True,
 title="スケッチからのキャラクタ生成",
