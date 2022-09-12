@@ -84,7 +84,7 @@ while True:
             if "Running on public URL" in line:
                 prefix = int(re.findall(r"\d+", line)[0])
                 logging.info(f"prefix={prefix} captured.")
-                notify = imgtransform.notify(f"https://{preifx}.gradio.app")
+                notify = imgtransform.notify(f"https://{prefix}.gradio.app")
                 logging.info(f"notify={notify} send.")
                 with open(target_dir/target_file, "w") as f:
                     f.write(html(prefix))
