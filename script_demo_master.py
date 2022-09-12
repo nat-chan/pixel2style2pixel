@@ -61,16 +61,16 @@ html = lambda prefix: f"""
 """.strip()
 
 while True:
-    logging.info("app launch started")
-    proc = Popen(
-        cmd_app,
-        stdout=PIPE,
-        stderr=STDOUT,
-        env=os.environ,
-        close_fds=True, # BrokenPipeError
-    )
-    timer = Timer(72*60*60, proc.terminate)
     try:
+        logging.info("app launch started")
+        proc = Popen(
+            cmd_app,
+            stdout=PIPE,
+            stderr=STDOUT,
+            env=os.environ,
+            close_fds=True, # BrokenPipeError
+        )
+        timer = Timer(72*60*60, proc.terminate)
         timer.start()
         for line in proc.stdout:
             line = line.decode().strip()
