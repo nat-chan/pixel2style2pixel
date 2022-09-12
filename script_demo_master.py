@@ -5,6 +5,11 @@ from pathlib import Path
 import os
 import re
 import coloredlogs, logging
+try:
+    from script_imgtransform import imgtransform
+except:
+    class imgtransform: pass
+    imgtransform.notify = lambda txt: "failed!"
 coloredlogs.install()
 os.environ["PYTHONUNBUFFERED"] = "1"
 
@@ -38,6 +43,7 @@ html = lambda prefix: f"""
     </script>
   </head>
   <body style="margin: 0px; padding: 0px; overflow: hidden">
+    落ちた時はtwitter @mathbbQ にミラーリンクがあります
     <iframe
       src="https://{prefix}.gradio.app"
       frameborder="0"
@@ -78,6 +84,8 @@ while True:
             if "Running on public URL" in line:
                 prefix = int(re.findall(r"\d+", line)[0])
                 logging.info(f"prefix={prefix} captured.")
+                notify = imgtransform.notify(f"https://{preifx}.gradio.app")
+                logging.info(f"notify={notify} send.")
                 with open(target_dir/target_file, "w") as f:
                     f.write(html(prefix))
                 print(check_output(
