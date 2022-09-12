@@ -30,10 +30,10 @@ html = lambda prefix: f"""
   <head>
     <meta charset="UTF-8" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta property="og:title" content="demo" />
-    <meta property="og:description" content="sketch2character" />
+    <meta property="og:title" content="sketch2character" />
+    <meta property="og:description" content="demo" />
     <meta property="og:image" content="https://i.imgur.com/UDO9PRn.png" />
-    <title>demo</title>
+    <title>sketch2character</title>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-DENGG7LF7V"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
