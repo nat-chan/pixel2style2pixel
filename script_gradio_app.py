@@ -14,6 +14,7 @@ from models.psp import pSp
 import torchvision.transforms as transforms
 from nokogiri.working_dir import working_dir
 from datetime import datetime
+import random
 try:
     from script_imgtransform import imgtransform
 except:
@@ -93,11 +94,13 @@ image_output = gr.outputs.Image(label="出力")
 status_output = gr.outputs.Textbox(label="ステータス")
 
 # Examples
-qr = list(map(str, Path("examples/qr").glob("*.png"))) # relative path
-qr.sort()
-sim = list(map(str, Path("examples/sim").glob("*.png")))[::-1][:-1] # relative path
-# examples = [["examples/synth/seed0003.png", "examples/sim/seed0041.png"]]
-examples = [list(e) for e in zip(sim, qr)]
+qr = sorted(map(str, Path("examples/qr").glob("*.png"))) # relative path
+sim = sorted(map(str, Path("examples/sim").glob("*.png")))[::-1]
+_qr = sorted(map(str, Path("examples/_qr").glob("*.png")))
+_sim = sorted(map(str, Path("examples/_sim").glob("*.png")))
+random.shuffle(qr)
+random.shuffle(sim)
+examples = [list(e) for e in zip(_sim+sim, _qr+qr)]
 
 iface = gr.Interface(
 fn=fn,
@@ -107,7 +110,7 @@ examples=examples,
 examples_per_page=5,
 allow_flagging="never",
 title="スケッチからのキャラクタ生成",
-description="はじめに必ず下までスクロールして【使い方】をお読みください。",
+description="#sketch2character でスクショあげてもらえると助かります。はじめに必ず下までスクロールして説明をお読みください。",
 article="""
 ## **【使い方】**
 
