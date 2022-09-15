@@ -1,0 +1,15 @@
+name: pspdemo
+root: <%= ENV["PWD"] %>
+
+windows:
+  - main:
+      layout: horizontal
+      panes:
+        - a:
+          - conda activate ada
+          - source ~/.zshrc
+          - while :; python script_demo_master.py ; do sleep 1 ; done
+        - b:
+          - conda activate ada
+          - source ~/.zshrc
+          - sleep $((6*60*60)) ; while :; python script_demo_master.py ; do sleep 1 ; done

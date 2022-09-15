@@ -66,33 +66,35 @@ html = lambda prefix: f"""
 </html>
 """.strip()
 
-while True:
-    try:
-        logging.info("app launch started")
-        proc = Popen(
-            cmd_app,
-            stdout=PIPE,
-            stderr=STDOUT,
-            env=os.environ,
-            close_fds=True, # BrokenPipeError
-        )
-        timer = Timer(72*60*60, proc.terminate)
-        timer.start()
-        for line in proc.stdout:
-            line = line.decode().strip()
-            print(line)
-            if "Running on public URL" in line:
-                prefix = int(re.findall(r"\d+", line)[0])
-                logging.info(f"prefix={prefix} captured.")
-                notify = imgtransform.notify(f"https://{prefix}.gradio.app")
-                logging.info(f"notify={notify} send.")
-                with open(target_dir/target_file, "w") as f:
-                    f.write(html(prefix))
-                print(check_output(
-                    cmd_git(prefix),
-                    stderr=STDOUT,
-                    shell=True,
-                ).decode())
-    finally:
-        proc.terminate()
-        timer.cancel()
+try:
+    logging.info("app launch started")
+    proc = Popen(
+        cmd_app,
+        stdout=PIPE,
+        stderr=STDOUT,
+        env=os.environ,
+        close_fds=True, # BrokenPipeError
+    )
+    timer = Timer(12*60*60, proc.terminate)
+    timer.start()
+    for line in proc.stdout:
+        line = line.decode().strip()
+        print(line)
+        if "Running on public URL" in line:
+            prefix = int(re.findall(r"\d+", line)[0])
+            logging.info(f"prefix={prefix} captured.")
+            notify = imgtransform.notify(f"https://{prefix}.gradio.app")
+            logging.info(f"notify={notify} send.")
+            with open(target_dir/target_file, "w") as f:
+                f.write(html(prefix))
+            print(check_output(
+                cmd_git(prefix),
+                stderr=STDOUT,
+                shell=True,
+            ).decode())
+        elif "Exception" in line:
+            logging.warning(f"{line}")
+            break
+finally:
+    proc.terminate()
+    timer.cancel()
