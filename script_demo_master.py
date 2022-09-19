@@ -43,7 +43,7 @@ html = lambda prefix: f"""
     </script>
   </head>
   <body style="margin: 0px; padding: 0px; overflow: hidden">
-    落ちた時はtwitter @mathbbQ にミラーリンクがあります
+    落ちた時は@mathbbQまで
     <iframe
       src="https://{prefix}.gradio.app"
       frameborder="0"
