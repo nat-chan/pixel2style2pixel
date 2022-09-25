@@ -132,4 +132,5 @@ wandb/
 pretrained_models/
 examples/
 patient/
-script_imgtransform.py
+script_imgtransform/
+.vscode/
