@@ -161,3 +161,14 @@ article="""
 """.strip()
 )
 iface.launch(share=True)
+
+"""
+TODO
+/home/natsuki/miniconda3/envs/ada/lib/python3.8/site-packages/gradio/deprecation.py:40: UserWarning: `optional` parameter is deprecated, and it has no effect
+warnings.warn(value)
+/home/natsuki/miniconda3/envs/ada/lib/python3.8/site-packages/gradio/outputs.py:42: UserWarning: Usage of gradio.outputs is deprecated, and will not be supported in the future, please import your components from gradio.components
+warnings.warn(
+/home/natsuki/miniconda3/envs/ada/lib/python3.8/site-packages/gradio/outputs.py:21: UserWarning: Usage of gradio.outputs is deprecated, and will not be supported in the future, please import your components from gradio.components
+warnings.warn(
+/home/natsuki/miniconda3/envs/ada/lib/python3.8/site-packages/gradio/deprecation.py:40: UserWarning: The 'type' parameter has been deprecated. Use the Number component instead.
+"""
