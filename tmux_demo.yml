@@ -1,0 +1,15 @@
+name: pspdemo
+root: <%= ENV["PWD"] %>
+
+windows:
+  - main:
+      layout: horizontal
+      panes:
+        - a:
+          - ~/dotfiles/scripts/CUDA10.2_ENV.sh
+          - conda activate ada
+          - source ./tmux_master.sh
+#        - b:
+#          - ~/dotfiles/scripts/CUDA10.2_ENV.sh
+#          - conda activate ada
+#          - sleep $((6*60*60)) ; source ./tmux_master.sh
