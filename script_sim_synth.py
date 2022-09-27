@@ -72,7 +72,7 @@ synth = sorted(map(str, Path("examples/synth").glob("*.png")))
 assert len(sim) == 100
 assert len(synth) == 100
 
-output_dir = Path("./sim_synth")
+output_dir = Path("./examples/sim_synth")
 output_dir.mkdir(exist_ok=True)
 for cname in tqdm(sim):
     for sname in synth:
