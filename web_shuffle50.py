@@ -115,6 +115,7 @@ HTML.append("""
 def c2bl(c):
     b = int(c)
     bl = [(b>>i)&1 for i in range(10)]
+    bl.reverse()
     return bl
 def code2bl(code, d="|"):
     code = code.lstrip(d).rstrip(d)
@@ -126,11 +127,12 @@ def code2bl(code, d="|"):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--code', type=str, default='')
+    parser.add_argument('--d', type=str, default='|')
     args = parser.parse_args()
     if args.code == '':
         print("\n".join(HTML))
     else:
-        bl = code2bl(args.code)
+        bl = code2bl(args.code, args.d)
         assert len(bl) == N
         for i, b in enumerate(bl):
             print(i, ["左", "右"][b])
