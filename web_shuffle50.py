@@ -136,4 +136,3 @@ if __name__ == '__main__':
         assert len(bl) == N
         for i, b in enumerate(bl):
             print(i, ["左", "右"][b])
-        pass
