@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import argparse
 
+from sklearn import metrics
+
 def strip_seed(sname):
     return int(sname.split("/")[-1].split(".")[0][4:])
 
@@ -127,10 +129,32 @@ def code2bl(code, d="|"):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--code', type=str, default='')
-    parser.add_argument('--d', type=str, default='|')
+    parser.add_argument('--d', type=str, default=',')
     parser.add_argument('--readlink', type=str, default="")
+    parser.add_argument('--metrics', type=bool, default=False)
     args = parser.parse_args()
     if False: pass
+    elif args.metrics:
+        metrics = dict()
+        with open("examples/shuffle50_L_clip.txt", "r") as f:
+            L_clip = [float(line.strip())for line in f.readlines()]
+        with open("examples/shuffle50_R_clip.txt", "r") as f:
+            R_clip = [float(line.strip())for line in f.readlines()]
+        with open("examples/shuffle50_codes.txt", "r") as f:
+            codes = [str(line.strip())for line in f.readlines()]
+        assert len(L_clip) == len(R_clip) == N
+        LR_clip = [int(l < r) for l, r in zip(L_clip, R_clip)]
+
+        ok = 0
+        for code in codes: # x users
+            bl = code2bl(code, args.d)
+            assert len(bl) == len(LR_clip) == N
+            for b, lr in zip(bl, LR_clip): # x N
+#                print(b, lr)
+                if b == lr: ok += 1
+        metrics["metrics1"] = 100*ok/(N*len(codes))
+        for k, v in metrics.items():
+            print(k, v)
     elif args.readlink != "":
         for path in globals()[args.readlink]: # L or R
             print(Path(path).absolute())
