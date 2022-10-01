@@ -17,10 +17,10 @@ ver1 = [f"examples/sim_synth/{strip_seed(a)}_{strip_seed(b)}.png" for a, b in zi
 s2p = [f"examples/pair50/{i}/a.png" for i in range(N)]
 ver1_s2p = ver1 + s2p
 np.random.RandomState(0).shuffle(ver1_s2p)
-A, B = ver1_s2p[:N], ver1_s2p[N:]
+L, R = ver1_s2p[:N], ver1_s2p[N:]
 
 title = sys.argv[0].lstrip("web_").rstrip(".py")
-datasetlists: List[List[str]] = [A, B]
+datasetlists: List[List[str]] = [L, R]
 names: List[str] = list()
 names = """
 左
@@ -128,8 +128,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--code', type=str, default='')
     parser.add_argument('--d', type=str, default='|')
+    parser.add_argument('--readlink', type=str, default="")
     args = parser.parse_args()
-    if args.code == '':
+    if False: pass
+    elif args.readlink != "":
+        for path in globals()[args.readlink]: # L or R
+            print(Path(path).absolute())
+    elif args.code == '':
         print("\n".join(HTML))
     else:
         bl = code2bl(args.code, args.d)
