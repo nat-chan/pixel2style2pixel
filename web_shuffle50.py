@@ -3,6 +3,7 @@ import sys
 from typing import List
 from pathlib import Path
 import numpy as np
+import argparse
 
 def strip_seed(sname):
     return int(sname.split("/")[-1].split(".")[0][4:])
@@ -28,38 +29,39 @@ names = """
 
 jscode = """
 function onclick_button(i, j){
-	document.getElementById(`button_${i}_${j}`).style = 'background-color:cyan;';
-	document.getElementById(`button_${i}_${1-j}`).style = '';
-	document.getElementById(`select_${i}`).innerHTML = ['左', '右'][j];
-	let not_selected = [];
-	let code = "";
-	for(let k=0; k<50; k++){
-		let tmp_innerHTML = document.getElementById(`select_${k}`).innerHTML;
-		if(tmp_innerHTML != '左' && tmp_innerHTML != '右'){
-			not_selected.push(k);
-		}else{
-			code += +(tmp_innerHTML == '右');
-		}
-	}
-	if(not_selected.length == 0){
-		let encoded = "";
-		for(let k=0; k<5; k++){
-			encoded += parseInt(code.substring(k*10, (k+1)*10), 2);
-			if(k != 5-1){
-				encoded += ",";
-			}
-		}
-		document.getElementById('input_top').value = encoded;
-	}else{
-		document.getElementById('input_top').value = '以下の番号がまだ未選択です'+not_selected.toString();
-	}
-	window.scrollBy(0,256);
-	console.log(i, j, code);
+    document.getElementById(`button_${i}_${j}`).style = 'background-color:cyan;';
+    document.getElementById(`button_${i}_${1-j}`).style = '';
+    document.getElementById(`select_${i}`).innerHTML = ['左', '右'][j];
+    let not_selected = [];
+    let code = "";
+    for(let k=0; k<50; k++){
+        let tmp_innerHTML = document.getElementById(`select_${k}`).innerHTML;
+        if(tmp_innerHTML != '左' && tmp_innerHTML != '右'){
+            not_selected.push(k);
+        }else{
+            code += +(tmp_innerHTML == '右');
+        }
+    }
+    if(not_selected.length == 0){
+        let encoded = "";
+        for(let k=0; k<5; k++){
+            encoded += parseInt(code.substring(k*10, (k+1)*10), 2);
+            if(k != 5-1){
+                encoded += ",";
+            }
+        }
+        document.getElementById('input_top').value = encoded;
+    }else{
+        document.getElementById('input_top').value = '以下の番号がまだ未選択です'+not_selected.toString();
+    }
+    window.scrollBy(0,256);
+    console.log(i, j, code);
 }
 """.strip()
 
 th = '\n'.join(f"<th style='width:256px;height:50px;font-size:27px;'>{name}</th>" for name in names)
-print(f"""
+HTML = []
+HTML.append(f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -87,23 +89,21 @@ print(f"""
 {th}
 </tr>
 """)
-"""
-<input id='input_top' style='width:512px;height:256px;', value='まだ何も選択されていません'>
-"""
-for i, items in enumerate(zip(*datasetlists)):
-	print("<tr>")
-	print(f"<td>{i}</td>")
-	print(f"<td id='select_{i}'>未選択</td>")
-	for j, item in enumerate(items):
-		print("".join([
-			f"<td>",
-				f"<button id='button_{i}_{j}' onclick='onclick_button({i}, {j})' style=''>",
-					f"<img src='{item}' loading='lazy' style='width:256px;height:256px;'>",
-				f"</button>",
-			f"</td>"]))
-	print("</tr>")
 
-print("""
+for i, items in enumerate(zip(*datasetlists)):
+    HTML.append("<tr>")
+    HTML.append(f"<td>{i}</td>")
+    HTML.append(f"<td id='select_{i}'>未選択</td>")
+    for j, item in enumerate(items):
+        HTML.append("".join([
+            f"<td>",
+                f"<button id='button_{i}_{j}' onclick='onclick_button({i}, {j})' style=''>",
+                    f"<img src='{item}' loading='lazy' style='width:256px;height:256px;'>",
+                f"</button>",
+            f"</td>"]))
+    HTML.append("</tr>")
+
+HTML.append("""
 </table>
 <button id='button_bottom' onclick='window.scrollTo(0, 0);' style='width:512px;height:256px;'>
 お疲れさまでした、トップに戻る
@@ -111,3 +111,27 @@ print("""
 </body>
 </html>
 """)
+
+def c2bl(c):
+    b = int(c)
+    bl = [(b>>i)&1 for i in range(10)]
+    return bl
+def code2bl(code, d="|"):
+    code = code.lstrip(d).rstrip(d)
+    code = code.split(d)
+    code = [c2bl(c) for c in code]
+    code = sum(code, [])
+    return code
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--code', type=str, default='')
+    args = parser.parse_args()
+    if args.code == '':
+        print("\n".join(HTML))
+    else:
+        bl = code2bl(args.code)
+        assert len(bl) == N
+        for i, b in enumerate(bl):
+            print(i, ["左", "右"][b])
+        pass
