@@ -42,9 +42,12 @@ function onclick_button(i, j){
 		}
 	}
 	if(not_selected.length == 0){
-		let encoded = "|";
+		let encoded = "";
 		for(let k=0; k<5; k++){
-			encoded += parseInt(code.substring(k*10, (k+1)*10), 2) + "|";
+			encoded += parseInt(code.substring(k*10, (k+1)*10), 2);
+			if(k != 5-1){
+				encoded += ",";
+			}
 		}
 		document.getElementById('input_top').value = encoded;
 	}else{
