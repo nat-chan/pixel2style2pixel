@@ -143,32 +143,33 @@ if __name__ == '__main__':
         with open("examples/shuffle50_codes.txt", "r") as f:
             codes = [str(line.strip())for line in f.readlines()]
         assert len(L_clip) == len(R_clip) == N
-        LR_clip = [int(l < r) for l, r in zip(L_clip, R_clip)]
+        Y = [int(l < r) for l, r in zip(L_clip, R_clip)]
 
         ok = 0
         for code in codes: # x users
-            bl = code2bl(code, args.d)
-            assert len(bl) == len(LR_clip) == N
-            for b, lr in zip(bl, LR_clip): # x N
+            Xi = code2bl(code, args.d)
+            assert len(Xi) == len(Y) == N
+            for x, y in zip(Xi, Y): # x N
 #                print(b, lr)
-                if b == lr: ok += 1
+                if x == y: ok += 1
         metrics["metrics1"] = 100*ok/(N*len(codes))
 
         """
-        \sigma^2 = N^{-1} \sum_{i}( E[bl]-bl_i )^2
+        \sigma^2 = N^{-1} \sum_{i}( E[X]-X_i )^2
         """
 
-        Ebl = np.array([code2bl(code, args.d) for code in codes])
-        Ebl = Ebl.mean(axis=0) # E[bl]
+        EX = np.array([code2bl(code, args.d) for code in codes])
+        EX = EX.mean(axis=0) # E[bl]
 
         user_var = list()
         for code in codes: # x users
-            bl = code2bl(code, args.d)
-            user_var.append(((Ebl-bl)**2).mean())
+            Xi = code2bl(code, args.d)
+            user_var.append(((EX-Xi)**2).mean())
 
         for k, v in metrics.items():
             print(k, v)
         
+        print("\sigma^2:", sum(user_var))
         print("user_var:")
         print("\n".join(f"{u:.2f}"for u in user_var))
     elif args.readlink != "":
@@ -177,7 +178,7 @@ if __name__ == '__main__':
     elif args.code == '':
         print("\n".join(HTML))
     else:
-        bl = code2bl(args.code, args.d)
-        assert len(bl) == N
-        for i, b in enumerate(bl):
-            print(i, ["左", "右"][b])
+        Xi = code2bl(args.code, args.d)
+        assert len(Xi) == N
+        for i, x in enumerate(Xi):
+            print(i, ["左", "右"][x])
