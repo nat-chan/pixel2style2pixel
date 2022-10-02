@@ -5,6 +5,7 @@ from typing import List
 from pathlib import Path
 import argparse
 import numpy as np
+import cv2
 
 def strip_seed(sname):
     return int(sname.split("/")[-1].split(".")[0][4:])
@@ -73,11 +74,25 @@ if __name__ == '__main__':
             ver1_clip = np.array([float(line.strip())for line in f.readlines()])
         with open("examples/pair50_s2p_clip.txt", "r") as f:
             s2p_clip = np.array([float(line.strip())for line in f.readlines()])
-        print(
-            100*(ver1_clip > s2p_clip).mean()
-        )
+        winrate = 100*(ver1_clip > s2p_clip).mean()
+        print("| CLIP winrate↑ |", winrate, "|", 100-winrate, "|")
+        SSIM = [list() for _ in range(2)]
+        PSNR = [list() for _ in range(2)]
+        for synth_path, ver1_path, s2p_path in zip(synth, ver1, s2p):
+            synth_arr = cv2.imread(synth_path, 0)
+            ver1_arr = cv2.imread(ver1_path, 0)
+            s2p_arr = cv2.imread(s2p_path, 0)
+            SSIM[0].append( cv2.quality.QualitySSIM_compute(synth_arr, ver1_arr)[0][0] )
+            SSIM[1].append( cv2.quality.QualitySSIM_compute(synth_arr, s2p_arr)[0][0] )
+
+            PSNR[0].append( cv2.quality.QualityPSNR_compute(synth_arr, ver1_arr)[0][0] )
+            PSNR[1].append( cv2.quality.QualityPSNR_compute(synth_arr, s2p_arr)[0][0] )
+        
+        print("| SSIM↑ |", f"{np.array(SSIM[0]).mean():.2f}", "|", f"{np.array(SSIM[1]).mean():.2f}", "|")
+        print("| PSNR↑ |", f"{np.array(PSNR[0]).mean():.2f}", "|", f"{np.array(PSNR[1]).mean():.2f}", "|")
+
     elif args.readlink != "":
-        for path in globals()[args.readlink]: # L or R
+        for path in globals()[args.readlink]: # ver1 or s2p
             print(Path(path).absolute())
     else:
         print("\n".join(HTML))
