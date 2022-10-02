@@ -137,41 +137,40 @@ if __name__ == '__main__':
     elif args.metrics:
         metrics = dict()
         with open("examples/shuffle50_L_clip.txt", "r") as f:
-            L_clip = [float(line.strip())for line in f.readlines()]
+            L_clip = np.array([float(line.strip())for line in f.readlines()])
         with open("examples/shuffle50_R_clip.txt", "r") as f:
-            R_clip = [float(line.strip())for line in f.readlines()]
+            R_clip = np.array([float(line.strip())for line in f.readlines()])
         with open("examples/shuffle50_codes.txt", "r") as f:
             codes = [str(line.strip())for line in f.readlines()]
-        assert len(L_clip) == len(R_clip) == N
-        Y = [int(l < r) for l, r in zip(L_clip, R_clip)]
+        I = len(codes)
+        X = np.array([code2bl(code, args.d) for code in codes])
+        Y = (L_clip < R_clip).astype(int)
+        EX = X.mean(axis=0) # E[bl]
+        assert X.shape == (I, N)
+        assert Y.shape == (N,)
+        assert EX.shape == (N,)
 
         ok = 0
-        for code in codes: # x users
-            Xi = code2bl(code, args.d)
-            assert len(Xi) == len(Y) == N
-            for x, y in zip(Xi, Y): # x N
-#                print(b, lr)
+        for i in range(I): # x users
+            for x, y in zip(X[i], Y): # x N
                 if x == y: ok += 1
-        metrics["metrics1"] = 100*ok/(N*len(codes))
+        metrics["metrics1"] = 100*ok/(I*N)
+        metrics["metrics2"] = 100*((EX > .5) == Y).mean()
 
         """
         \sigma^2 = N^{-1} \sum_{i}( E[X]-X_i )^2
         """
 
-        EX = np.array([code2bl(code, args.d) for code in codes])
-        EX = EX.mean(axis=0) # E[bl]
-
         user_var = list()
-        for code in codes: # x users
-            Xi = code2bl(code, args.d)
+        for Xi in X: # x users
             user_var.append(((EX-Xi)**2).mean())
 
         for k, v in metrics.items():
-            print(k, v)
+            print(f"{k}:", f"{v:.2f}")
         
         print("\sigma^2:", sum(user_var))
         print("user_var:")
-        print("\n".join(f"{u:.2f}"for u in user_var))
+        print("\n".join(f"{u:.2f}"[1:] for u in user_var))
     elif args.readlink != "":
         for path in globals()[args.readlink]: # L or R
             print(Path(path).absolute())
