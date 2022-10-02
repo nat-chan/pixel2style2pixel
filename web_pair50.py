@@ -3,7 +3,7 @@ import sys
 from glob import glob
 from typing import List
 from pathlib import Path
-import argparse
+from nokogiri import anyparse as argparse
 import numpy as np
 import cv2
 
@@ -67,6 +67,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--readlink', type=str, default="")
     parser.add_argument('--metrics', type=bool, default=False)
+    parser.jupyter_argument("--metrics True")
     args = parser.parse_args()
     if False: pass
     elif args.metrics:
