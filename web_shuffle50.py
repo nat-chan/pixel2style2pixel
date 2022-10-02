@@ -153,8 +153,24 @@ if __name__ == '__main__':
 #                print(b, lr)
                 if b == lr: ok += 1
         metrics["metrics1"] = 100*ok/(N*len(codes))
+
+        """
+        \sigma^2 = N^{-1} \sum_{i}( E[bl]-bl_i )^2
+        """
+
+        Ebl = np.array([code2bl(code, args.d) for code in codes])
+        Ebl = Ebl.mean(axis=0) # E[bl]
+
+        user_var = list()
+        for code in codes: # x users
+            bl = code2bl(code, args.d)
+            user_var.append(((Ebl-bl)**2).mean())
+
         for k, v in metrics.items():
             print(k, v)
+        
+        print("user_var:")
+        print("\n".join(f"{u:.2f}"for u in user_var))
     elif args.readlink != "":
         for path in globals()[args.readlink]: # L or R
             print(Path(path).absolute())
