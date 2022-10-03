@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import argparse
 
-from sklearn import metrics
+import sklearn.metrics
 
 def strip_seed(sname):
     return int(sname.split("/")[-1].split(".")[0][4:])
@@ -147,7 +147,8 @@ if __name__ == '__main__':
             I = len(codes)
             X = np.array([code2bl(code, args.d) for code in codes])
             Y = (L_clip < R_clip).astype(int)
-            EX = X.mean(axis=0) # E[bl]
+            EX = X.mean(axis=0) # E[X]
+            TX = (EX > .5).astype(int) # thr_{.5}(E[X])
             assert X.shape == (I, N)
             assert Y.shape == (N,)
             assert EX.shape == (N,)
@@ -156,8 +157,8 @@ if __name__ == '__main__':
                 for x, y in zip(X[i], Y): # x N
                     if x == y: ok += 1
             metrics["metrics1"] = 100*ok/(I*N)
-            metrics["metrics2"] = 100*((EX > .5) == Y).mean()
-            metrics["metrics3"] = ((EX - Y)**2).mean()**.5
+            metrics["metrics2"] = 100*(TX == Y).mean()
+            metrics["kappa_score"] = sklearn.metrics.cohen_kappa_score(TX, Y)
 
             """
             \sigma^2 = N^{-1} \sum_{i}( E[X]-X_i )^2
@@ -174,12 +175,14 @@ if __name__ == '__main__':
         print("\sigma^2:", sum(user_var))
         print("user_var:")
         print("\n".join(f"{u:.2f}"[1:] for u in user_var))
-
-        user_var_codes = sorted(zip(user_var, codes), reverse=True)[6:]
-        user_var, codes = list(zip(*user_var_codes))
-        metrics, user_var = met(codes)
-        for k, v in metrics.items():
-            print(f"{k}:", f"{v:.2f}")
+        for outlier in range(1,15):
+            print()
+            print(f"{outlier=}")
+            user_var_codes = sorted(zip(user_var, codes), reverse=True)[1:]
+            user_var, codes = list(zip(*user_var_codes))
+            metrics, user_var = met(codes)
+            for k, v in metrics.items():
+                print(f"{k}:", f"{v:.2f}")
 
     elif args.readlink != "":
         for path in globals()[args.readlink]: # L or R
