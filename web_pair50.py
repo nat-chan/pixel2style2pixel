@@ -6,6 +6,8 @@ from pathlib import Path
 from nokogiri import anyparse as argparse
 import numpy as np
 import cv2
+import subprocess
+import pytorch_fid.fid_score
 
 def strip_seed(sname):
     return int(sname.split("/")[-1].split(".")[0][4:])
@@ -63,6 +65,27 @@ HTML.append("""
 </html>
 """)
 
+def calc_FID():
+    # FID
+    items = ["ref", "ver1", "s2p"]
+    for item in items:
+        Path(f"examples/{item}").mkdir(exist_ok=True)
+        for i, src in enumerate(globals()[item]):
+            src = Path(src).absolute()
+            dst = Path(f"examples/{item}/{i}.png").absolute()
+            print(subprocess.check_output(f"ln -sf {src} {dst}", shell=True).decode(), end="")
+        if item == "ref": continue 
+        print()
+        print(
+            item,
+            subprocess.check_output(
+                f"python -m pytorch_fid ./examples/ref ./examples/{item}",
+                shell=True
+            ).decode()
+        )
+
+        
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--readlink', type=str, default="")
@@ -91,6 +114,7 @@ if __name__ == '__main__':
         
         print("| SSIM↑ |", f"{np.array(SSIM[0]).mean():.2f}", "|", f"{np.array(SSIM[1]).mean():.2f}", "|")
         print("| PSNR↑ |", f"{np.array(PSNR[0]).mean():.2f}", "|", f"{np.array(PSNR[1]).mean():.2f}", "|")
+        calc_FID()
 
     elif args.readlink != "":
         for path in globals()[args.readlink]: # ver1 or s2p
