@@ -142,35 +142,45 @@ if __name__ == '__main__':
             R_clip = np.array([float(line.strip())for line in f.readlines()])
         with open("examples/shuffle50_codes.txt", "r") as f:
             codes = [str(line.strip())for line in f.readlines()]
-        I = len(codes)
-        X = np.array([code2bl(code, args.d) for code in codes])
-        Y = (L_clip < R_clip).astype(int)
-        EX = X.mean(axis=0) # E[bl]
-        assert X.shape == (I, N)
-        assert Y.shape == (N,)
-        assert EX.shape == (N,)
+        
+        def met(codes=codes):
+            I = len(codes)
+            X = np.array([code2bl(code, args.d) for code in codes])
+            Y = (L_clip < R_clip).astype(int)
+            EX = X.mean(axis=0) # E[bl]
+            assert X.shape == (I, N)
+            assert Y.shape == (N,)
+            assert EX.shape == (N,)
+            ok = 0
+            for i in range(I): # x users
+                for x, y in zip(X[i], Y): # x N
+                    if x == y: ok += 1
+            metrics["metrics1"] = 100*ok/(I*N)
+            metrics["metrics2"] = 100*((EX > .5) == Y).mean()
+            metrics["metrics3"] = ((EX - Y)**2).mean()**.5
 
-        ok = 0
-        for i in range(I): # x users
-            for x, y in zip(X[i], Y): # x N
-                if x == y: ok += 1
-        metrics["metrics1"] = 100*ok/(I*N)
-        metrics["metrics2"] = 100*((EX > .5) == Y).mean()
+            """
+            \sigma^2 = N^{-1} \sum_{i}( E[X]-X_i )^2
+            """
 
-        """
-        \sigma^2 = N^{-1} \sum_{i}( E[X]-X_i )^2
-        """
-
-        user_var = list()
-        for Xi in X: # x users
-            user_var.append(((EX-Xi)**2).mean())
+            user_var = list()
+            for Xi in X: # x users
+                user_var.append(((EX-Xi)**2).mean())
+            return metrics, user_var
+        metrics, user_var = met(codes)
 
         for k, v in metrics.items():
             print(f"{k}:", f"{v:.2f}")
-        
         print("\sigma^2:", sum(user_var))
         print("user_var:")
         print("\n".join(f"{u:.2f}"[1:] for u in user_var))
+
+        user_var_codes = sorted(zip(user_var, codes), reverse=True)[6:]
+        user_var, codes = list(zip(*user_var_codes))
+        metrics, user_var = met(codes)
+        for k, v in metrics.items():
+            print(f"{k}:", f"{v:.2f}")
+
     elif args.readlink != "":
         for path in globals()[args.readlink]: # L or R
             print(Path(path).absolute())
