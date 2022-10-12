@@ -176,7 +176,8 @@ if __name__ == '__main__':
             print(f"{k}:", f"{v:.2f}")
 
         print("\sigma^2:", sum(user.var))
-        print("user_kappa_mean:", np.array(user.kappa).mean())
+        user.kappa = np.array(user.kappa)
+        print("user_kappa (μ±σ):", f"{user.kappa.mean():.2f} ± {user.kappa.std():.2f}")
         print("user_var:")
         print(f"|{'|'.join(f' user_{k} 'for k in user.keys())}|")
         print(f"|{'|'.join(f' ---- 'for k in user.keys())}|")
