@@ -3,6 +3,7 @@ import sys
 from typing import List
 from pathlib import Path
 import numpy as np
+from nokogiri.defaultdotdict import  defaultdotdict
 import argparse
 
 import sklearn.metrics
@@ -164,23 +165,31 @@ if __name__ == '__main__':
             \sigma^2 = N^{-1} \sum_{i}( E[X]-X_i )^2
             """
 
-            user_var = list()
+            user = defaultdotdict(list)
             for Xi in X: # x users
-                user_var.append(((EX-Xi)**2).mean())
-            return metrics, user_var
-        metrics, user_var = met(codes)
+                user.var.append(((EX-Xi)**2).mean())
+                user.kappa.append( sklearn.metrics.cohen_kappa_score(Xi, Y) )
+            return metrics, user
+        metrics, user = met(codes)
 
         for k, v in metrics.items():
             print(f"{k}:", f"{v:.2f}")
-        print("\sigma^2:", sum(user_var))
+
+        print("\sigma^2:", sum(user.var))
+        print("user_kappa_mean:", np.array(user.kappa).mean())
         print("user_var:")
-        print("\n".join(f"{u:.2f}"[1:] for u in user_var))
-        for outlier in range(1,15):
+        print(f"|{'|'.join(f' user_{k} 'for k in user.keys())}|")
+        print(f"|{'|'.join(f' ---- 'for k in user.keys())}|")
+#        print("\n".join(f"{u:.2f}"[1:] for u in user.var))
+        for line in zip(*user.values()):
+            print(f"|{'|'.join(f' {k:.2f} 'for k in line)}|")
+
+        for outlier in range(1,11):
             print()
             print(f"{outlier=}")
-            user_var_codes = sorted(zip(user_var, codes), reverse=True)[1:]
-            user_var, codes = list(zip(*user_var_codes))
-            metrics, user_var = met(codes)
+            user_var_codes = sorted(zip(user.var, codes), reverse=True)[1:]
+            user.var, codes = list(zip(*user_var_codes))
+            metrics, user = met(codes)
             for k, v in metrics.items():
                 print(f"{k}:", f"{v:.2f}")
 
