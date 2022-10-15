@@ -58,7 +58,8 @@ def mapping(G, seed=1, psi=1):
 
 resize = transforms.Resize((256, 256))
 
-def fn(content_image, style_image):
+def fn(content_image, style_image, attr_txt):
+    print(attr_txt)
     content_image, style_image = imgtransform(content_image, style_image)
     try:
         seed = int(pyzbar.decode(Image.fromarray(style_image))[0].data)
@@ -82,7 +83,7 @@ def fn(content_image, style_image):
         latent_to_inject = None
     else:
         latent_to_inject = mapping(net.decoder.G, seed)
-    output_torch = run_on_batch(content_torch, net, opts, latent_to_inject)
+    output_torch = run_on_batch(content_torch, net, opts, latent_to_inject, "test")
     output_pillow = common.tensor2im(output_torch[0])
     output_numpy = np.array(output_pillow)
     return output_numpy, output_text
@@ -90,6 +91,7 @@ def fn(content_image, style_image):
 
 content_image_input = gr.inputs.Image(label="スケッチの入力", shape=(512, 512), image_mode="L")
 style_image_input = gr.inputs.Image(label="塗り方の入力※左上のQRコードから読み取ります", shape=(512, 512))
+attribute_text_input = gr.inputs.Radio(label="属性の指定", choices=["なし", "男の子", "眼鏡", "ケモミミ", "片目隠れ"])
 image_output = gr.outputs.Image(label="出力")
 status_output = gr.outputs.Textbox(label="ステータス")
 
@@ -104,7 +106,7 @@ examples = [list(e) for e in zip(_sim+sim, _qr+qr)]
 
 iface = gr.Interface(
 fn=fn,
-inputs=[content_image_input, style_image_input],
+inputs=[content_image_input, style_image_input, attribute_text_input],
 outputs=[image_output, status_output],
 examples=examples,
 examples_per_page=5,
