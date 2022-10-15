@@ -20,6 +20,12 @@ try:
 except:
     imgtransform = lambda *x: x
 
+def load_attr(i, device="cuda"):
+    wm_np = np.load(f"/data/natsuki/fact_lib/i2v_wm/{i}.npy")
+    wm_np = wm_np.astype(np.float32)
+    wm = torch.from_numpy(wm_np[None,:][[0]*16,:]).to(device)
+    return wm
+
 # sketch_simplification
 with working_dir("/home/natsuki/sketch_simplification"):
     import simplify
@@ -58,8 +64,8 @@ def mapping(G, seed=1, psi=1):
 
 resize = transforms.Resize((256, 256))
 
-def fn(content_image, style_image, attr_txt):
-    print(attr_txt)
+def fn(content_image, style_image, attr_txt, attr_strength):
+    if attr_txt == "": attr_txt = "なし"
     content_image, style_image = imgtransform(content_image, style_image)
     try:
         seed = int(pyzbar.decode(Image.fromarray(style_image))[0].data)
@@ -70,8 +76,6 @@ def fn(content_image, style_image, attr_txt):
     except:
         seed = 0
         output_text = f"Failed to read QR, fall back to random seed"
-    now = datetime.now().strftime("%m/%d %H:%M %S")
-    print(now, output_text)
     
     content_torch = torch.from_numpy(
         sm.normalize(content_image[None,None,:,:]/255)
@@ -83,15 +87,32 @@ def fn(content_image, style_image, attr_txt):
         latent_to_inject = None
     else:
         latent_to_inject = mapping(net.decoder.G, seed)
-    output_torch = run_on_batch(content_torch, net, opts, latent_to_inject, "test")
+
+    replace_avg = ATTR.get(attr_txt, None)
+    if replace_avg is not None:
+        replace_avg = attr_strength*replace_avg + (1-attr_strength)*net.latent_avg
+
+    output_torch = run_on_batch(content_torch, net, opts, latent_to_inject, replace_avg)
     output_pillow = common.tensor2im(output_torch[0])
     output_numpy = np.array(output_pillow)
+    output_text += f" | attr={attr_txt}, strength={attr_strength}"
+    now = datetime.now().strftime("%m/%d %H:%M %S")
+    print(now, output_text)
     return output_numpy, output_text
 
 
+ATTR = {
+    "なし": None,
+    "ケモミミ": load_attr(334),
+    "眼鏡": load_attr(57),
+    "目隠れ": load_attr(281),
+    "男の子": load_attr(24),
+}
+
 content_image_input = gr.inputs.Image(label="スケッチの入力", shape=(512, 512), image_mode="L")
 style_image_input = gr.inputs.Image(label="塗り方の入力※左上のQRコードから読み取ります", shape=(512, 512))
-attribute_text_input = gr.inputs.Radio(label="属性の指定", choices=["なし", "男の子", "眼鏡", "ケモミミ", "片目隠れ"])
+attribute_text_input = gr.inputs.Radio(label="属性の変更", choices=list(ATTR.keys()))
+attribute_strength_input = gr.inputs.Slider(label="属性変更の強さ", minimum=0, maximum=1)
 image_output = gr.outputs.Image(label="出力")
 status_output = gr.outputs.Textbox(label="ステータス")
 
@@ -106,7 +127,7 @@ examples = [list(e) for e in zip(_sim+sim, _qr+qr)]
 
 iface = gr.Interface(
 fn=fn,
-inputs=[content_image_input, style_image_input, attribute_text_input],
+inputs=[content_image_input, style_image_input, attribute_text_input, attribute_strength_input],
 outputs=[image_output, status_output],
 examples=examples,
 examples_per_page=5,

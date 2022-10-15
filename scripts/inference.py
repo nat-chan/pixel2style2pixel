@@ -109,7 +109,7 @@ def run():
         f.write(result_str)
 
 
-def run_on_batch(inputs, net, opts, latent_to_inject=None):
+def run_on_batch(inputs, net, opts, latent_to_inject=None, replace_avg=None):
     if opts.latent_mask is None:
         result_batch = net(inputs, randomize_noise=False, resize=opts.resize_outputs)
     else:
@@ -124,11 +124,18 @@ def run_on_batch(inputs, net, opts, latent_to_inject=None):
                                         input_code=True,
                                         return_latents=True)
             # get output image with injected style vector
+            if replace_avg is not None:
+                latent_avg = net.latent_avg
+#                print(net.latent_avg.dtype, net.latent_avg.shape, type(net.latent_avg))
+#                torch.float32 torch.Size([16, 512]) <class 'torch.Tensor'>
+                net.latent_avg = replace_avg
             res = net(input_image.unsqueeze(0).to("cuda").float(),
                       latent_mask=latent_mask,
                       inject_latent=latent_to_inject,
                       alpha=opts.mix_alpha,
                       resize=opts.resize_outputs)
+            if replace_avg is not None:
+                net.latent_avg = latent_avg
             result_batch.append(res)
         result_batch = torch.cat(result_batch, dim=0)
     return result_batch
