@@ -94,10 +94,10 @@ image_output = gr.outputs.Image(label="出力")
 status_output = gr.outputs.Textbox(label="ステータス")
 
 # Examples
-qr = sorted(map(str, Path("examples/qr").glob("*.png"))) # relative path
-sim = sorted(map(str, Path("examples/sim").glob("*.png")))[::-1]
-_qr = sorted(map(str, Path("examples/_qr").glob("*.png")))
-_sim = sorted(map(str, Path("examples/_sim").glob("*.png")))
+qr = sorted(map(str, Path("examples/qr_jpg").glob("*.jpg"))) # relative path
+sim = sorted(map(str, Path("examples/sim_jpg").glob("*.jpg")))[::-1]
+_qr = sorted(map(str, Path("examples/_qr_jpg").glob("*.jpg")))
+_sim = sorted(map(str, Path("examples/_sim_jpg").glob("*.jpg")))
 random.shuffle(qr)
 random.shuffle(sim)
 examples = [list(e) for e in zip(_sim+sim, _qr+qr)]
