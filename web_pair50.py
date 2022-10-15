@@ -19,9 +19,13 @@ sim = sorted(map(str, Path("examples/sim").glob("*.png")))[:N]
 ref = sorted(map(str, Path("examples/synth").glob("*.png")))[N:]
 ver1 = [f"examples/sim_synth/{strip_seed(a)}_{strip_seed(b)}.png" for a, b in zip(sim, ref)]
 s2p = [f"examples/pair50/{i}/a.png" for i in range(N)]
+Tanpopo = [f"examples/petalica/t{i}.jpg" for i in range(N)]
+Satsuki = [f"examples/petalica/s{i}.jpg" for i in range(N)]
+Canna   = [f"examples/petalica/c{i}.jpg" for i in range(N)]
+
 
 title = sys.argv[0].rstrip(".py")
-datasetlists: List[List[str]] = [synth, sim, ref, ver1, s2p]
+datasetlists: List[List[str]] = [synth, sim, ref, ver1, s2p, Tanpopo, Satsuki, Canna,]
 names: List[str] = list()
 names = """
 線画抽出元の画像
@@ -29,6 +33,9 @@ names = """
 塗り方のreference画像
 Ours ver1 w/ref
 style2paints v4.5 w/ref	
+Petalica Paint Tanpopo wo/ref
+Petalica Paint Satsuki wo/ref
+Petalica Paint Canna wo/ref
 """.strip().split("\n")
 """
 """
@@ -65,9 +72,10 @@ HTML.append("""
 </html>
 """)
 
-def calc_FID():
+def calc_FID(models):
     # FID
-    items = ["ref", "ver1", "s2p"]
+    items = ["ref", *models]
+    retval = dict()
     for item in items:
         Path(f"examples/{item}").mkdir(exist_ok=True)
         for i, src in enumerate(globals()[item]):
@@ -75,14 +83,11 @@ def calc_FID():
             dst = Path(f"examples/{item}/{i}.png").absolute()
             print(subprocess.check_output(f"ln -sf {src} {dst}", shell=True).decode(), end="")
         if item == "ref": continue 
-        print()
-        print(
-            item,
-            subprocess.check_output(
+        retval[item] = float(subprocess.check_output(
                 f"python -m pytorch_fid ./examples/ref ./examples/{item}",
                 shell=True
-            ).decode()
-        )
+            ).decode().lstrip("FID:").strip())
+    return retval
 
         
 
@@ -94,27 +99,31 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if False: pass
     elif args.metrics:
-        with open("examples/pair50_ver1_clip.txt", "r") as f:
-            ver1_clip = np.array([float(line.strip())for line in f.readlines()])
-        with open("examples/pair50_s2p_clip.txt", "r") as f:
-            s2p_clip = np.array([float(line.strip())for line in f.readlines()])
-        winrate = 100*(ver1_clip > s2p_clip).mean()
-        print("| CLIP winrate↑ |", winrate, "|", 100-winrate, "|")
-        SSIM = [list() for _ in range(2)]
-        PSNR = [list() for _ in range(2)]
-        for synth_path, ver1_path, s2p_path in zip(synth, ver1, s2p):
-            synth_arr = cv2.imread(synth_path, 0)
-            ver1_arr = cv2.imread(ver1_path, 0)
-            s2p_arr = cv2.imread(s2p_path, 0)
-            SSIM[0].append( cv2.quality.QualitySSIM_compute(synth_arr, ver1_arr)[0][0] )
-            SSIM[1].append( cv2.quality.QualitySSIM_compute(synth_arr, s2p_arr)[0][0] )
-
-            PSNR[0].append( cv2.quality.QualityPSNR_compute(synth_arr, ver1_arr)[0][0] )
-            PSNR[1].append( cv2.quality.QualityPSNR_compute(synth_arr, s2p_arr)[0][0] )
+        models = ["ver1", "s2p", "Tanpopo", "Satsuki", "Canna"]
+        FIDs = calc_FID(models)
+        print("| name |", " | ".join(models), "|")
+        print("| - |", " | ".join(['-' for _ in models]), "|")
+        print("| FID↓ |", " | ".join([f"{np.array(i).mean():.2f}" for i in FIDs.values()]), "|")
+        clip = list()
+        for model in models:
+            with open(f"examples/pair50_{model}_clip.txt", "r") as f:
+                clip.append( np.array([float(line.strip())for line in f.readlines()]) )
+        print("| CLIP winrate↑ | 100-x |", end="")
+        for c in clip[1:]:
+            winrate = 100*(clip[0] < c).mean()
+            print(f" {winrate:.2f} |", end="")
+        print()
+        SSIM = [list() for _ in models]
+        PSNR = [list() for _ in models]
+        for paths in zip(synth, *[globals()[k]for k in models]):
+            synth_arr = cv2.imread(paths[0], 0)
+            for i, path in enumerate(paths[1:]):
+                arr = cv2.imread(path, 0)
+                SSIM[i].append( cv2.quality.QualitySSIM_compute(synth_arr, arr)[0][0] )
+                PSNR[i].append( cv2.quality.QualityPSNR_compute(synth_arr, arr)[0][0] )
         
-        print("| SSIM↑ |", f"{np.array(SSIM[0]).mean():.2f}", "|", f"{np.array(SSIM[1]).mean():.2f}", "|")
-        print("| PSNR↑ |", f"{np.array(PSNR[0]).mean():.2f}", "|", f"{np.array(PSNR[1]).mean():.2f}", "|")
-        calc_FID()
+        print("| SSIM↑ |", " | ".join([f"{np.array(i).mean():.2f}" for i in SSIM]), "|")
+        print("| PSNR↑ |", " | ".join([f"{np.array(i).mean():.2f}" for i in PSNR]), "|")
 
     elif args.readlink != "":
         for path in globals()[args.readlink]: # ver1 or s2p
