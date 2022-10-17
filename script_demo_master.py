@@ -86,7 +86,7 @@ def main(args):
             line = line.decode().strip()
             print(line)
             if "Running on public URL" in line:
-                prefix = int(re.findall(r"\d+", line)[0])
+                prefix = re.findall(r"https://(.+).gradio.app", line)[0]
                 logging.info(f"prefix={prefix} captured.")
                 if args.notify:
                     notify = imgtransform.notify(f"https://{prefix}.gradio.app")
