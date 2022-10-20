@@ -65,6 +65,7 @@ def mapping(G, seed=1, psi=1):
 resize = transforms.Resize((256, 256))
 
 def fn(content_image, style_image, attr_txt, attr_strength):
+    if content_image is None: return None, "Sketch input is empty"
     if attr_txt == "": attr_txt = "なし"
     content_image, style_image = imgtransform(content_image, style_image)
     try:
@@ -103,7 +104,8 @@ def fn(content_image, style_image, attr_txt, attr_strength):
 
 ATTR = {
     "なし": None,
-    "男の子": load_attr(24),
+    "男の子(イケメン)": load_attr(24),
+    "男の子(ショタ)": load_attr(83),
     "ケモミミ": load_attr(334),
     "ウサミミ": load_attr(133),
 #    "メイド": load_attr(138),
