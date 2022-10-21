@@ -60,22 +60,30 @@ class W2DF(torch.nn.Module):
         self.sim_norm = sm.normalize
         self.sim = sm.model
         self.pmodel = pmodel
-    def forward(self, w):
-        from_mat = self.net.decoder.G.synth(w, retarr="torch")[:, :, [2,1,0]] # torch.uint8(512, 512, 3) 20.00~255.00
-        from_mat = from_mat.permute(2, 0, 1) # torch.uint8(3, 512, 512) 20.00~255.00
-        from_mat_BCHW = from_mat[:, None, :,:].float() #BxCxHxW
-        blur = kornia.filters.gaussian_blur2d(from_mat_BCHW, (2*9+1, 2*9+1), (3, 3))[:,0,:,:] #torch.float32(3, 512, 512) 37.23~255.00
-        highPass = (from_mat.int()-blur.int()).float()/128.0 # torch.float32(3, 512, 512) -1.00~1.10
-        inp = highPass/highPass.amax(axis=(1,2))[:,None,None] # torch.float32(3, 512, 512) -0.91~1.00
-        mat = self.pmodel(inp[:,:,:,None]) # torch.float32(3, 512, 512, 1) -0.20~1.26
-        mat = mat.permute(3, 1, 2, 0)[0] # torch.float32(512, 512, 3) -0.21~1.27
-        mat = mat.amax(2) # torch.float32(512, 512) -0.17~1.26
-        mat[mat<0.18] = 0 # torch.float32(512, 512) 0.00~1.26
-        mat = - mat + 1 # torch.float32(512, 512) -0.26~1.00
-        mat = mat * 255.0 # torch.float32(512, 512) -65.57~255.00
-        mat = torch.clamp(mat, 0, 255) # torch.float32(512, 512) 0.00~255.00
-        sim_torch = self.sim_norm(mat[None,None,:,:]/255)  # torch.float32(1, 1, 512, 512) -11.26~0.39
-        sim_torch = self.sim(sim_torch) # torch.float32(1, 1, 512, 512) 0.00~1.00
+    def forward(self, w, mode="w"):
+        if mode == "w":
+            from_mat = self.net.decoder.G.synth(w, retarr="torch")[:, :, [2,1,0]] # torch.uint8(512, 512, 3) 20.00~255.00
+        elif mode == "illust(512,512,3)": #0~255
+            from_mat = w
+        else:
+            from_mat = self.net.decoder.G.synth(self.net.decoder.G.map(), retarr="torch")[:, :, [2,1,0]] # torch.uint8(512, 512, 3) 20.00~255.00
+        if mode not in ["sim(1,1,512,512)"]:
+            from_mat = from_mat.permute(2, 0, 1) # torch.uint8(3, 512, 512) 20.00~255.00
+            from_mat_BCHW = from_mat[:, None, :,:].float() #BxCxHxW
+            blur = kornia.filters.gaussian_blur2d(from_mat_BCHW, (2*9+1, 2*9+1), (3, 3))[:,0,:,:] #torch.float32(3, 512, 512) 37.23~255.00
+            highPass = (from_mat.int()-blur.int()).float()/128.0 # torch.float32(3, 512, 512) -1.00~1.10
+            inp = highPass/highPass.amax(axis=(1,2))[:,None,None] # torch.float32(3, 512, 512) -0.91~1.00
+            mat = self.pmodel(inp[:,:,:,None]) # torch.float32(3, 512, 512, 1) -0.20~1.26
+            mat = mat.permute(3, 1, 2, 0)[0] # torch.float32(512, 512, 3) -0.21~1.27
+            mat = mat.amax(2) # torch.float32(512, 512) -0.17~1.26
+            mat[mat<0.18] = 0 # torch.float32(512, 512) 0.00~1.26
+            mat = - mat + 1 # torch.float32(512, 512) -0.26~1.00
+            mat = mat * 255.0 # torch.float32(512, 512) -65.57~255.00
+            mat = torch.clamp(mat, 0, 255) # torch.float32(512, 512) 0.00~255.00
+            sim_torch = self.sim_norm(mat[None,None,:,:]/255)  # torch.float32(1, 1, 512, 512) -11.26~0.39
+            sim_torch = self.sim(sim_torch) # torch.float32(1, 1, 512, 512) 0.00~1.00
+        if mode == "sim(1,1,512,512)": #0~255
+            sim_torch = w
         sim_bin = (sim_torch < 0.9).float()
         df = kornia.contrib.distance_transform(sim_bin)
         return df
