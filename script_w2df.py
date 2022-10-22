@@ -3,10 +3,6 @@ from os import environ
 device = "cuda"
 from nokogiri.working_dir import working_dir
 from pathlib import Path
-environ["CPATH"] = f'/usr/local/cuda-10.2/targets/x86_64-linux/include:{environ["CPATH"]}'
-environ["LD_LIBRARY_PATH"] = f'/usr/local/cuda-10.2/targets/x86_64-linux/lib:{environ["LD_LIBRARY_PATH"]}'
-environ["PATH"] = f'/usr/local/cuda-10.2/bin:{environ["PATH"]}'
-environ["CUDA_VISIBLE_DEVICES"]="5"
 # sketch_simplification
 with working_dir("/home/natsuki/sketch_simplification"):
     import simplify
@@ -60,6 +56,7 @@ class W2DF(torch.nn.Module):
         self.sim_norm = sm.normalize
         self.sim = sm.model
         self.pmodel = pmodel
+        self.net.decoder.G.synth(self.net.decoder.G.map()) # Setting up Pytorch plugin
     def forward(self, w, imode="w", omode="df"):
         if imode == "w":
             from_mat = self.net.decoder.G.synth(w, retarr="torch")[:, :, [2,1,0]] # torch.uint8(512, 512, 3) 20.00~255.00
@@ -86,7 +83,10 @@ class W2DF(torch.nn.Module):
             sim_torch = w
         sim_bin = (sim_torch < 0.9).float()
         df = kornia.contrib.distance_transform(sim_bin)
-        return df
+        if omode == "df_sim":
+            return df, sim_torch
+        else:
+            return df
 
 if __name__ == "__main__":
     from tensorboardX import SummaryWriter
