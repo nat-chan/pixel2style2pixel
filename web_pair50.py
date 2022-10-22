@@ -22,10 +22,15 @@ s2p = [f"examples/pair50/{i}/a.png" for i in range(N)]
 Tanpopo = [f"examples/petalica/t{i}.jpg" for i in range(N)]
 Satsuki = [f"examples/petalica/s{i}.jpg" for i in range(N)]
 Canna   = [f"examples/petalica/c{i}.jpg" for i in range(N)]
+webtoon = [f"examples/webtoon/{i}_ai-painter.png" for i in range(N)]
+clipstudio = [f"examples/clipstudio/{i}.png" for i in range(N)]
 
 
 title = sys.argv[0].rstrip(".py")
-datasetlists: List[List[str]] = [synth, sim, ref, ver1, s2p, Tanpopo, Satsuki, Canna,]
+
+models = ["ver1", "s2p", "webtoon", "clipstudio", "Tanpopo", "Satsuki", "Canna"]
+
+datasetlists: List[List[str]] = [synth, sim, ref]+[globals()[m] for m in models]
 names: List[str] = list()
 names = """
 線画抽出元の画像
@@ -33,12 +38,12 @@ names = """
 塗り方のreference画像
 Ours ver1 w/ref
 style2paints v4.5 w/ref	
-Petalica Paint Tanpopo wo/ref
-Petalica Paint Satsuki wo/ref
-Petalica Paint Canna wo/ref
+NAVER Webtoon AI Painter wo/ref
+Celsys ClipStudioPaint v1.12.8 wo/ref
+Pixiv(PFN) Petalica Paint Tanpopo wo/ref
+Pixiv(PFN) Petalica Paint Satsuki wo/ref
+Pixiv(PFN) Petalica Paint Canna wo/ref
 """.strip().split("\n")
-"""
-"""
 
 assert len(datasetlists) == len(names)
 
@@ -81,7 +86,8 @@ def calc_FID(models):
         for i, src in enumerate(globals()[item]):
             src = Path(src).absolute()
             dst = Path(f"examples/{item}/{i}.png").absolute()
-            print(subprocess.check_output(f"ln -sf {src} {dst}", shell=True).decode(), end="")
+            if src != dst:
+                print(subprocess.check_output(f"ln -sf {src} {dst}", shell=True).decode(), end="")
         if item == "ref": continue 
         retval[item] = float(subprocess.check_output(
                 f"python -m pytorch_fid ./examples/ref ./examples/{item}",
@@ -99,11 +105,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if False: pass
     elif args.metrics:
-        models = ["ver1", "s2p", "Tanpopo", "Satsuki", "Canna"]
-        FIDs = calc_FID(models)
+#        FIDs = calc_FID(models)
         print("| name |", " | ".join(models), "|")
         print("| - |", " | ".join(['-' for _ in models]), "|")
-        print("| FID↓ |", " | ".join([f"{np.array(i).mean():.2f}" for i in FIDs.values()]), "|")
+#        print("| FID↓ |", " | ".join([f"{np.array(i).mean():.2f}" for i in FIDs.values()]), "|")
         clip = list()
         for model in models:
             with open(f"examples/pair50_{model}_clip.txt", "r") as f:
