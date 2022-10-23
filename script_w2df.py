@@ -79,6 +79,8 @@ class W2DF(torch.nn.Module):
             mat = torch.clamp(mat, 0, 255) # torch.float32(512, 512) 0.00~255.00
             sim_torch = self.sim_norm(mat[None,None,:,:]/255)  # torch.float32(1, 1, 512, 512) -11.26~0.39
             sim_torch = self.sim(sim_torch) # torch.float32(1, 1, 512, 512) 0.00~1.00
+        if omode == "sim(1,1,512,512)":
+            return sim_torch
         if imode == "sim(1,1,512,512)": #0~255
             sim_torch = w
         sim_bin = (sim_torch < 0.9).float()
