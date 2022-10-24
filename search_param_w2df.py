@@ -124,6 +124,7 @@ def print_params():
 
 def print_params2():
     param = dict()
+    params = set()
     for dist_weight in range(0,10,2):
         param["dist_weight"] = dist_weight/10
         param["additional_weight"] = (10-dist_weight)/10
@@ -131,7 +132,22 @@ def print_params2():
             param["custom_lr"] = custom_lr
             for w_std in [i/100 for i in range(0, 100+1, 20)]:
                 param["w_std"] = w_std
-                print(param)
+                params.add(repr(param))
+    return params
+
+
+def print_params3():
+    param = dict()
+    params = set()
+    for dist_weight in range(0,10,1):
+        param["dist_weight"] = dist_weight/10
+        param["additional_weight"] = (10-dist_weight)/10
+        for custom_lr in [i/100 for i in range(1, 10+1, 2)]: # lrはTOP8が0.05,0.03でバラつきが無いので探索幅を変えない
+            param["custom_lr"] = custom_lr
+            for w_std in [i/100 for i in range(0, 100+1, 10)]:
+                param["w_std"] = w_std
+                params.add(repr(param))
+    return params
         
         
 
@@ -162,5 +178,6 @@ if __name__ == "__main__":
             reload(w2df_projector)
             project = w2df_projector.project
 
-    #print_params2()
+    #for param in sorted(print_params3()-print_params2()):
+    #    print(param)
     main()
