@@ -28,23 +28,25 @@ Tanpopo = [f"examples/petalica/t{i}.jpg" for i in range(N)]
 Satsuki = [f"examples/petalica/s{i}.jpg" for i in range(N)]
 Canna   = [f"examples/petalica/c{i}.jpg" for i in range(N)]
 white55 = sorted(map(str, Path("examples/white55").glob("*.png")))[:N]
+grid100 = sorted(map(str, Path("grid100/dist_weight=0.3_additional_weight=0.7_custom_lr=0.05_w_std=0.7").glob("*.png")))[:N]
 white55_ref = [f"examples/white55_ref/{i}.png" for i in range(N)]
 
 
 title = sys.argv[0].rstrip(".py")
 
-models = ["ver1", "s2p", "white55_ref", "white55", "webtoon", "clipstudio", "Tanpopo", "Satsuki", "Canna"]
+models = ["grid100", "white55", "ver1", "s2p", "white55_ref", "webtoon", "clipstudio", "Tanpopo", "Satsuki", "Canna"]
 
-datasetlists: List[List[str]] = [synth, sim, ref]+[globals()[m] for m in models]
+datasetlists: List[List[str]] = [ref, synth, sim]+[globals()[m] for m in models]
 names: List[str] = list()
 names = """
+塗り方のreference画像
 線画抽出元の画像
 入力する線画
-塗り方のreference画像
-SG2+pSp w/ref
+pSp +achromatic +DF_proj (best) wo/ref
+DF_proj from global_avg (.5,.5) wo/ref
+pSp w/ref
 style2paints v4.5 w/ref	
-SG2+DF projection w/ref
-SG2+DF projection wo/ref
+DF_proj from global_avg (.5,.5) w/ref
 NAVER Webtoon AI Painter wo/ref
 Celsys ClipStudioPaint v1.12.8 wo/ref
 Pixiv(PFN) Petalica Paint Tanpopo wo/ref
