@@ -134,3 +134,5 @@ examples/
 patient/
 script_imgtransform/
 .vscode/
+grid100/
+grid100ref/
