@@ -132,6 +132,7 @@ wandb/
 pretrained_models/
 examples/
 patient/
+patient_fixkdesvr1/
 script_imgtransform/
 .vscode/
 grid100/
