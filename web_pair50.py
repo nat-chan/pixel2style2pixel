@@ -29,12 +29,13 @@ Satsuki = [f"examples/petalica/s{i}.jpg" for i in range(N)]
 Canna   = [f"examples/petalica/c{i}.jpg" for i in range(N)]
 white55 = sorted(map(str, Path("examples/white55").glob("*.png")))[:N]
 grid100 = sorted(map(str, Path("grid100/dist_weight=0.3_additional_weight=0.7_custom_lr=0.05_w_std=0.7").glob("*.png")))[:N]
+grid100ref = [f"grid100ref/dist_weight=0.3_additional_weight=0.7_custom_lr=0.05_w_std=0.7/{i}.png" for i in range(N)]
 white55_ref = [f"examples/white55_ref/{i}.png" for i in range(N)]
 
 
 title = sys.argv[0].rstrip(".py")
 
-models = ["grid100", "white55", "ver1", "s2p", "white55_ref", "webtoon", "clipstudio", "Tanpopo", "Satsuki", "Canna"]
+models = ["grid100", "white55", "grid100ref", "ver1", "s2p", "white55_ref", "webtoon", "clipstudio", "Tanpopo", "Satsuki", "Canna"]
 
 datasetlists: List[List[str]] = [ref, synth, sim]+[globals()[m] for m in models]
 names: List[str] = list()
@@ -44,6 +45,7 @@ names = """
 入力する線画
 pSp +achromatic +DF_proj (best) wo/ref
 DF_proj from global_avg (.5,.5) wo/ref
+pSp +achromatic +DF_proj (best) w/ref
 pSp w/ref
 style2paints v4.5 w/ref	
 DF_proj from global_avg (.5,.5) w/ref
@@ -133,13 +135,15 @@ if __name__ == '__main__':
                     clip.append( np.array([float(line.strip())for line in f.readlines()]) )
             else:
                 clip.append(None)
-        print("| CLIP winrate↑ | 100-x |", end="")
-        for c in clip[1:]:
-            if c is not None:
-                winrate = 100*(clip[0] < c).mean()
-                print(f" {winrate:.2f} |", end="")
-            else:
-                print(f" N/A |", end="")
+        print("| CLIP winrate↑ |", end="")
+        for i, c in enumerate(clip):
+            q = 3
+            if i == q:
+                if c is not None:
+                    winrate = 100*(clip[q] < c).mean()
+                    print(f" {winrate:.2f} |", end="")
+                else:
+                    print(f" 100-x |", end="")
         print()
         SSIM = [list() for _ in models]
         PSNR = [list() for _ in models]
